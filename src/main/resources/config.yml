@@ -1,0 +1,7 @@
+# the block type that is used to link the phatLoot
+# https://jd.papermc.io/paper/1.21.8/org/bukkit/Material.html
+blockType: CHEST
+# the phatLoot to auto link
+phatLoot: sampleLoot
+# the radius, from which the player should be in center
+radius: 20

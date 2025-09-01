@@ -1,0 +1,9 @@
+name: phatloots-help
+version: 1.0
+main: io.github.anjoismysign.phatlootsHelp.PhatlootsHelp
+api-version: 1.21
+depend:
+  PhatLoots
+commands:
+  phatlootshelp:
+    info: gg ez
