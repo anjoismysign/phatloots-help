@@ -9,6 +9,7 @@ import io.github.anjoismysign.skeramidcommands.server.bukkit.BukkitAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.Particle;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.CommandSender;
@@ -16,6 +17,7 @@ import org.bukkit.entity.BlockDisplay;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Transformation;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -56,11 +58,14 @@ public final class PhatlootsHelp extends JavaPlugin {
             Location location = player.getLocation();
             World world = player.getWorld();
             int radius = helpConfig.getRadius();
-            Location lowest = location.subtract((double) radius /2, (double) radius /2, (double) radius /2);
-            Location highest = location.add((double) radius /2, (double) radius /2, (double) radius /2);
+            Location lowest = location.clone().subtract((double) radius /2, (double) radius /2, (double) radius /2);
+            Location highest = location.clone().add((double) radius /2, (double) radius /2, (double) radius /2);
+
+            Cuboid cuboid = new Cuboid(lowest, highest);
+
             List<Block> blocks = new ArrayList<>();
             for (int x = lowest.getBlockX(); x <= highest.getBlockX(); x++) {
-                for (int y = lowest.getBlockZ(); y <= highest.getBlockZ(); y++) {
+                for (int y = lowest.getBlockY(); y <= highest.getBlockY(); y++) {
                     for (int z = lowest.getBlockZ(); z <= highest.getBlockZ(); z++) {
                         Block block = world.getBlockAt(x,y,z);
                         if (block.getType() != helpConfig.getBlockType()){
@@ -72,23 +77,23 @@ public final class PhatlootsHelp extends JavaPlugin {
             }
             Bukkit.getScheduler().runTask(this, ()->{
                 blocks.forEach(phatLoot::addChest);
-                BlockDisplay display = (BlockDisplay) world.spawnEntity(lowest, EntityType.BLOCK_DISPLAY);
-                display.setPersistent(false);
-                display.setGlowing(true);
-                display.setBlock(Material.GLASS.createBlockData());
-                Transformation previous = display.getTransformation();
-                Vector vector = highest.subtract(lowest).toVector();
-                double x = vector.getBlockX();
-                double y = vector.getBlockY();
-                double z = vector.getBlockZ();
-                Transformation transformation = new Transformation(
-                        previous.getTranslation(),
-                        previous.getLeftRotation(),
-                        new Vector3f((float) x, (float) y, (float) z),
-                        previous.getRightRotation());
-                display.setTransformation(transformation);
+                phatLoot.saveChests();
                 permissionMessenger.sendMessage("linkin done!");
-                Bukkit.getScheduler().runTaskLater(this, display::remove, 5);
+                List<Location> edges = cuboid.drawEdges(0.5);
+                final int[] timer = {0};
+                new BukkitRunnable(){
+                    @Override
+                    public void run() {
+                        if (timer[0] >= 200){
+                            cancel();
+                            return;
+                        }
+                        edges.forEach(loc->{
+                            world.spawnParticle(Particle.CRIT, loc,1,0,0,0,0);
+                        });
+                        timer[0]++;
+                    }
+                }.runTaskTimer(this, 1, 1);
             });
         }));
         reload();
